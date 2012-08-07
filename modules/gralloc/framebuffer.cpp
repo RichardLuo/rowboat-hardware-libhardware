@@ -103,11 +103,22 @@ static int fb_post(struct framebuffer_device_t* dev, buffer_handle_t buffer)
             return -errno;
         }
 
+#ifndef OMAP_FB
         if (ioctl(m->framebuffer->fd, FBIO_WAITFORVSYNC, 0)) {
             ALOGE("FBIO_WAITFORVSYNC failed");
             m->base.unlock(&m->base, buffer);
             return -errno;
         }
+#else
+        #define OMAP_IO(num)            _IO('O', num)
+        #define OMAPFB_WAITFORGO        OMAP_IO(60)
+
+        unsigned int dummy;
+        if (ioctl(m->framebuffer->fd, OMAPFB_WAITFORGO, &dummy) < 0) {
+            ALOGE("OMAPFB_WAITFORGO failed");
+            return 0;
+        }
+#endif
 
         m->currentBuffer = buffer;
         
